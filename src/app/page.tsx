@@ -341,22 +341,17 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Theme Toggle Button with Lucide Icons */}
+            {/* Minimal Icon-Only Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className="px-3 py-1.5 rounded-lg border border-gray-700/40 bg-gray-900/10 hover:bg-gray-800/20 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all"
-              title="Toggle Light/Dark Theme"
+              className="p-2 rounded-xl border border-gray-700/40 bg-gray-900/10 hover:bg-gray-800/20 text-xs font-semibold flex items-center justify-center cursor-pointer transition-all"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label="Toggle Theme"
             >
               {theme === 'dark' ? (
-                <>
-                  <Sun className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Light</span>
-                </>
+                <Sun className="w-4 h-4 text-amber-400" />
               ) : (
-                <>
-                  <Moon className="w-3.5 h-3.5 text-indigo-500" />
-                  <span>Dark</span>
-                </>
+                <Moon className="w-4 h-4 text-indigo-500" />
               )}
             </button>
 

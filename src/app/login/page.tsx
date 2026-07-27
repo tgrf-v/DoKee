@@ -100,22 +100,16 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 relative">
-      {/* Theme Toggle Button with Lucide Sun/Moon Icons */}
+      {/* Icon-Only Theme Toggle Button */}
       <button
         onClick={toggleTheme}
-        className="absolute top-6 right-6 p-2.5 rounded-xl glass-panel text-xs font-semibold flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
-        title="Toggle Theme"
+        className="absolute top-6 right-6 p-2.5 rounded-xl glass-panel text-xs font-semibold flex items-center justify-center cursor-pointer hover:opacity-80 transition-all"
+        aria-label="Toggle Theme"
       >
         {theme === 'dark' ? (
-          <>
-            <Sun className="w-4 h-4 text-amber-400" />
-            <span>Light Mode</span>
-          </>
+          <Sun className="w-4 h-4 text-amber-400" />
         ) : (
-          <>
-            <Moon className="w-4 h-4 text-indigo-400" />
-            <span>Dark Mode</span>
-          </>
+          <Moon className="w-4 h-4 text-indigo-500" />
         )}
       </button>
 
