@@ -162,16 +162,12 @@ export default function Sidebar() {
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl border border-gray-700/40 bg-gray-900/10 hover:bg-gray-800/20 text-xs font-semibold cursor-pointer transition-all"
+              className="w-10 h-10 rounded-full border border-gray-700/40 bg-gray-900/10 hover:bg-gray-800/20 text-xs font-semibold cursor-pointer transition-all flex items-center justify-center"
               title="Profile Options"
             >
-              <div className="flex items-center gap-2.5 truncate">
-                <div className="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs shrink-0">
-                  {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
-                </div>
-                <span className="truncate text-xs font-medium">{user.email}</span>
+              <div className="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-sm">
+                {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
               </div>
-              <ChevronDown className="w-3.5 h-3.5 opacity-60 shrink-0" />
             </button>
 
             {isProfileOpen && (
