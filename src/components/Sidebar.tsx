@@ -7,8 +7,6 @@ import { useAuth } from '@/context/AuthContext';
 import { 
   CheckSquare, 
   Settings, 
-  Sun, 
-  Moon, 
   LogOut, 
   ChevronDown,
   Menu,
@@ -18,33 +16,11 @@ import {
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logOut } = useAuth();
-
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // Theme Persistence
-  useEffect(() => {
-    const savedTheme = (localStorage.getItem('dokee_theme') as 'dark' | 'light') || 'dark';
-    setTheme(savedTheme);
-    if (savedTheme === 'light') {
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.remove('light');
-    }
-  }, []);
 
-  const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    localStorage.setItem('dokee_theme', nextTheme);
-    if (nextTheme === 'light') {
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.remove('light');
-    }
-  };
 
   // Close profile menu when clicking outside
   useEffect(() => {
@@ -139,24 +115,8 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        {/* Bottom Section: Theme Toggle & Profile Dropdown */}
+        {/* Bottom Section: Profile Dropdown */}
         <div className="space-y-3 pt-4 border-t border-gray-700/30">
-          {/* Minimalist Icon-Only Theme Toggle */}
-          <div className="flex items-center justify-between px-2">
-            <span className="text-[11px] opacity-60 font-medium">Theme</span>
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl border border-gray-700/40 bg-gray-900/10 hover:bg-gray-800/20 text-xs font-semibold flex items-center justify-center cursor-pointer transition-all"
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              aria-label="Toggle Theme"
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4 text-indigo-500" />
-              )}
-            </button>
-          </div>
 
           {/* Profile Dropdown */}
           <div className="relative" ref={profileRef}>

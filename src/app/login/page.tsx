@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Sun, Moon, Shield, Lock, Mail, KeyRound, AlertCircle, ArrowRight } from 'lucide-react';
+import { Shield, Lock, Mail, KeyRound, AlertCircle, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const { user, signIn, signUp, loading: authLoading } = useAuth();
@@ -15,28 +15,8 @@ export default function LoginPage() {
   const [confirmPass, setConfirmPass] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
-  useEffect(() => {
-    const savedTheme = (localStorage.getItem('dokee_theme') as 'dark' | 'light') || 'dark';
-    setTheme(savedTheme);
-    if (savedTheme === 'light') {
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.remove('light');
-    }
-  }, []);
 
-  const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    localStorage.setItem('dokee_theme', nextTheme);
-    if (nextTheme === 'light') {
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.remove('light');
-    }
-  };
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -100,18 +80,6 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 relative">
-      {/* Icon-Only Theme Toggle Button */}
-      <button
-        onClick={toggleTheme}
-        className="absolute top-6 right-6 p-2.5 rounded-xl glass-panel text-xs font-semibold flex items-center justify-center cursor-pointer hover:opacity-80 transition-all"
-        aria-label="Toggle Theme"
-      >
-        {theme === 'dark' ? (
-          <Sun className="w-4 h-4 text-amber-400" />
-        ) : (
-          <Moon className="w-4 h-4 text-indigo-500" />
-        )}
-      </button>
 
       <div className="w-full max-w-md">
         {/* Brand Header */}

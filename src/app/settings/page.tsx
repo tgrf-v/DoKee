@@ -129,12 +129,14 @@ export default function SettingsPage() {
     <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       {/* Header */}
       <div className="border-b border-gray-700/30 pb-4 flex items-center justify-between">
-        <div>
+        <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <Settings className="w-6 h-6 text-cyan-500" />
             System Settings
           </h1>
-          <p className="text-xs opacity-60 mt-1">Configure global anti-distraction rules & tolerance limits</p>
+          <span title="Configure global anti-distraction rules & tolerance limits" className="cursor-help text-cyan-400 opacity-60 hover:opacity-100 mt-1">
+            <Info className="w-4 h-4" />
+          </span>
         </div>
 
         {saveSuccess && (
