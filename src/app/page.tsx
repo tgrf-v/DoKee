@@ -12,7 +12,16 @@ import {
   Flame, 
   Activity, 
   Timer,
-  Info
+  Info,
+  Calendar,
+  Tag as TagIcon,
+  ListTodo,
+  Shield,
+  Layers,
+  Sparkles,
+  ChevronRight,
+  Trash2,
+  FileText
 } from 'lucide-react';
 import { 
   db, 
@@ -28,20 +37,31 @@ import {
   getTodayDateString,
   getDailyLogId,
   DailyTask,
-  DailyLog
+  DailyLog,
+  SubTask,
+  UserSettings
 } from '@/lib/firebase';
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Tasks & Log States
+  // Settings & Log States
   const [remainingSeconds, setRemainingSeconds] = useState<number>(30 * 60);
+  const [toleranceMinutes, setToleranceMinutes] = useState<number>(30);
   const [isSurrendered, setIsSurrendered] = useState<boolean>(false);
+  const [blockedUrls, setBlockedUrls] = useState<string[]>([]);
+  
+  // Tasks & Selection States
   const [tasks, setTasks] = useState<DailyTask[]>([]);
+  const [selectedTask, setSelectedTask] = useState<DailyTask | null>(null);
   const [taskTitle, setTaskTitle] = useState('');
   const [taskStartTime, setTaskStartTime] = useState('08:00');
+  const [taskCategory, setTaskCategory] = useState<'Personal' | 'Work' | 'Study' | 'Project'>('Work');
   const [isAddingTask, setIsAddingTask] = useState(false);
+
+  // Detail Inspector Subtask State
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
   // Waiting Room States
   const [showWaitingRoom, setShowWaitingRoom] = useState(false);
@@ -57,6 +77,20 @@ export default function DashboardPage() {
       router.push('/login');
     }
   }, [user, authLoading, router]);
+
+  // Firestore Real-time Sync: Settings
+  useEffect(() => {
+    if (!user) return;
+    const settingsRef = doc(db, 'settings', user.uid);
+    const unsubSettings = onSnapshot(settingsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data() as UserSettings;
+        setBlockedUrls(data.blocked_urls || []);
+        setToleranceMinutes(data.tolerance_minutes ?? 30);
+      }
+    });
+    return () => unsubSettings();
+  }, [user]);
 
   // Firestore Real-time Sync: Daily Log
   useEffect(() => {
@@ -93,6 +127,17 @@ export default function DashboardPage() {
         fetchedTasks.push({ id: docSnap.id, ...docSnap.data() } as DailyTask);
       });
       setTasks(fetchedTasks);
+
+      // Auto-select first task if none selected or selected task updated
+      if (fetchedTasks.length > 0) {
+        setSelectedTask((prev) => {
+          if (!prev) return fetchedTasks[0];
+          const updated = fetchedTasks.find((t) => t.id === prev.id);
+          return updated || fetchedTasks[0];
+        });
+      } else {
+        setSelectedTask(null);
+      }
     });
 
     return () => unsubTasks();
@@ -141,15 +186,21 @@ export default function DashboardPage() {
     if (!user || !taskTitle.trim()) return;
     setIsAddingTask(true);
     try {
-      await addDoc(collection(db, 'daily_tasks'), {
+      const newTaskData = {
         user_id: user.uid,
         title: taskTitle.trim(),
+        description: '',
+        category: taskCategory,
         start_time: taskStartTime,
         target_date: todayStr,
+        deadline_type: 'daily',
+        deadline_time: taskStartTime,
+        subtasks: [],
         is_completed: false,
         completed_at: null,
         created_at: serverTimestamp()
-      });
+      };
+      await addDoc(collection(db, 'daily_tasks'), newTaskData);
       setTaskTitle('');
     } catch (err) {
       console.error('Error adding task:', err);
@@ -170,6 +221,56 @@ export default function DashboardPage() {
     } catch (err) {
       console.error('Error updating task state:', err);
     }
+  };
+
+  // Update Detail Inspector Task Attributes
+  const handleUpdateTaskDetail = async (fields: Partial<DailyTask>) => {
+    if (!selectedTask || !selectedTask.id) return;
+    try {
+      const taskRef = doc(db, 'daily_tasks', selectedTask.id);
+      await updateDoc(taskRef, fields);
+      setSelectedTask({ ...selectedTask, ...fields });
+    } catch (err) {
+      console.error('Error updating task details:', err);
+    }
+  };
+
+  // Add Subtask to Selected Task
+  const handleAddSubtask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTask || !selectedTask.id || !newSubtaskTitle.trim()) return;
+
+    const newSub: SubTask = {
+      id: Date.now().toString(),
+      title: newSubtaskTitle.trim(),
+      is_completed: false
+    };
+
+    const currentSubtasks = selectedTask.subtasks || [];
+    const updatedSubtasks = [...currentSubtasks, newSub];
+
+    await handleUpdateTaskDetail({ subtasks: updatedSubtasks });
+    setNewSubtaskTitle('');
+  };
+
+  // Toggle Subtask Completion
+  const handleToggleSubtask = async (subtaskId: string) => {
+    if (!selectedTask || !selectedTask.id) return;
+    const currentSubtasks = selectedTask.subtasks || [];
+    const updatedSubtasks = currentSubtasks.map((st) => 
+      st.id === subtaskId ? { ...st, is_completed: !st.is_completed } : st
+    );
+
+    await handleUpdateTaskDetail({ subtasks: updatedSubtasks });
+  };
+
+  // Remove Subtask
+  const handleRemoveSubtask = async (subtaskId: string) => {
+    if (!selectedTask || !selectedTask.id) return;
+    const currentSubtasks = selectedTask.subtasks || [];
+    const updatedSubtasks = currentSubtasks.filter((st) => st.id !== subtaskId);
+
+    await handleUpdateTaskDetail({ subtasks: updatedSubtasks });
   };
 
   // Surrender Complete Execution
@@ -198,19 +299,24 @@ export default function DashboardPage() {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
+  // Stats Calculations
+  const completedTasksCount = tasks.filter((t) => t.is_completed).length;
+  const totalTasksCount = tasks.length;
+  const progressPercent = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm font-medium opacity-70">Loading Tasks...</p>
+          <p className="text-sm font-medium opacity-70">Loading DoKee...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       
       {/* Status Alert Banner */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl glass-panel border-cyan-500/30">
@@ -233,136 +339,399 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Daily Task List Section */}
-      <section className="glass-panel p-6 rounded-2xl space-y-6">
-        <div className="border-b border-gray-700/30 pb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <CheckSquare className="w-5 h-5 text-cyan-500" />
-            Daily Tasks
-          </h2>
+      {/* Main Grid: Left/Center Tasks (6/10) + Right Utility Panel (4/10) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        {/* LEFT/CENTER: Tasks List & Waiting Room (7/12 cols) */}
+        <div className="lg:col-span-7 space-y-8">
+          
+          {/* Daily Task List Section */}
+          <section className="glass-panel p-6 rounded-2xl space-y-6">
+            <div className="border-b border-gray-700/30 pb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <CheckSquare className="w-5 h-5 text-cyan-500" />
+                Daily Tasks
+              </h2>
 
-          <div className="text-xs text-cyan-500 bg-cyan-500/10 px-3 py-1.5 rounded-lg border border-cyan-500/20 font-mono flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5" />
-            <span>{tasks.filter((t) => t.is_completed).length} / {tasks.length} Completed</span>
-          </div>
+              <div className="text-xs text-cyan-500 bg-cyan-500/10 px-3 py-1.5 rounded-lg border border-cyan-500/20 font-mono flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5" />
+                <span>{completedTasksCount} / {totalTasksCount} Completed</span>
+              </div>
+            </div>
+
+            {/* Add Task Form */}
+            <form onSubmit={handleAddTask} className="flex flex-col sm:flex-row gap-3 p-3 rounded-xl border border-gray-700/30 bg-gray-900/10">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  required
+                  placeholder="Task title (e.g. Upload Shorts)..."
+                  value={taskTitle}
+                  onChange={(e) => setTaskTitle(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] text-xs placeholder-[var(--input-placeholder)] focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div className="w-28">
+                <select
+                  value={taskCategory}
+                  onChange={(e: any) => setTaskCategory(e.target.value)}
+                  className="w-full px-2 py-2 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] text-xs focus:outline-none focus:border-cyan-500 font-semibold"
+                >
+                  <option value="Work">Work</option>
+                  <option value="Personal">Personal</option>
+                  <option value="Study">Study</option>
+                  <option value="Project">Project</option>
+                </select>
+              </div>
+
+              <div className="w-28">
+                <input
+                  type="time"
+                  required
+                  value={taskStartTime}
+                  onChange={(e) => setTaskStartTime(e.target.value)}
+                  className="w-full px-2.5 py-2 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] text-xs font-mono focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isAddingTask}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold text-xs shrink-0 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                title="Add task"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add</span>
+              </button>
+            </form>
+
+            {/* Tasks List */}
+            <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+              {tasks.length === 0 ? (
+                <div className="text-center py-12 border border-dashed border-gray-700/40 rounded-xl">
+                  <p className="text-xs opacity-60">No daily tasks scheduled yet.</p>
+                </div>
+              ) : (
+                tasks.map((task) => {
+                  const isSelected = selectedTask?.id === task.id;
+                  return (
+                    <div
+                      key={task.id}
+                      onClick={() => setSelectedTask(task)}
+                      className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer ${
+                        isSelected 
+                          ? 'border-cyan-500 bg-cyan-500/10 shadow-md shadow-cyan-500/10'
+                          : task.is_completed
+                          ? 'bg-emerald-500/10 border-emerald-500/30 opacity-70'
+                          : 'glass-panel border-gray-700/30 hover:border-gray-600'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4 flex-1">
+                        {/* Friction 1 Checkbox */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleTaskComplete(task.id!, task.is_completed);
+                          }}
+                          className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                            task.is_completed
+                              ? 'bg-emerald-500 border-emerald-500 text-black shadow-md shadow-emerald-500/20'
+                              : 'border-cyan-500 hover:bg-cyan-500/20'
+                          }`}
+                          title="Click to toggle status"
+                        >
+                          {task.is_completed && <Check className="w-5 h-5 stroke-[3]" />}
+                        </button>
+
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className={`text-sm font-semibold ${task.is_completed ? 'line-through opacity-60' : ''}`}>
+                              {task.title}
+                            </p>
+                            {task.category && (
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-gray-800/80 border border-gray-700/50 text-cyan-400">
+                                {task.category}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-3 mt-1 text-[11px] opacity-70">
+                            <span className="font-mono text-cyan-500 flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> Start: {task.start_time}
+                            </span>
+                            {task.deadline_type === 'project' && (
+                              <span className="font-mono text-amber-400 flex items-center gap-1">
+                                <Calendar className="w-3 h-3" /> Project Deadline: {task.deadline_date || 'TBD'}
+                              </span>
+                            )}
+                            {task.subtasks && task.subtasks.length > 0 && (
+                              <span className="flex items-center gap-1 font-mono">
+                                <ListTodo className="w-3 h-3" /> {task.subtasks.filter(s => s.is_completed).length}/{task.subtasks.length} subtasks
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <ChevronRight className={`w-4 h-4 opacity-40 transition-transform ${isSelected ? 'translate-x-1 opacity-100 text-cyan-400' : ''}`} />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </section>
+
+          {/* Emergency Waiting Room Section */}
+          <section className="glass-panel-danger p-6 rounded-2xl border border-red-500/30">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-red-400 text-xs font-bold uppercase tracking-wider mb-1">
+                  <AlertTriangle className="w-4 h-4" />
+                  Emergency Protocol
+                  <span title="Emergency surrender option: Requires 120s continuous focus without leaving tab" className="cursor-help text-red-400/80 hover:text-red-300">
+                    <Info className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold">The Waiting Room</h3>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowWaitingRoom(true);
+                  setWaitingRoomTimer(120);
+                  setFocusResetCount(0);
+                  setWaitingRoomStatusText('Focus on this window for 120 continuous seconds.');
+                }}
+                disabled={isSurrendered}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-red-600/30 transition-all shrink-0 cursor-pointer disabled:opacity-40 flex items-center gap-2"
+              >
+                <Flame className="w-4 h-4" />
+                <span>{isSurrendered ? 'Already Surrendered' : 'Saya Menyerah Hari Ini'}</span>
+              </button>
+            </div>
+          </section>
+
         </div>
 
-        {/* Add Task Form */}
-        <form onSubmit={handleAddTask} className="flex flex-col sm:flex-row gap-3 p-3 rounded-xl border border-gray-700/30 bg-gray-900/10">
-          <div className="flex-1">
-            <input
-              type="text"
-              required
-              placeholder="Task title (e.g. Upload Shorts)..."
-              value={taskTitle}
-              onChange={(e) => setTaskTitle(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] text-xs placeholder-[var(--input-placeholder)] focus:outline-none focus:border-cyan-500"
-            />
-          </div>
-
-          <div className="w-full sm:w-36">
-            <input
-              type="time"
-              required
-              value={taskStartTime}
-              onChange={(e) => setTaskStartTime(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] text-xs font-mono focus:outline-none focus:border-cyan-500"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isAddingTask}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold text-xs shrink-0 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
-            title="Add task"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add</span>
-          </button>
-        </form>
-
-        {/* Tasks List */}
-        <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
-          {tasks.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-gray-700/40 rounded-xl">
-              <p className="text-xs opacity-60">No daily tasks scheduled yet.</p>
+        {/* RIGHT UTILITY PANEL: Selected Task Details, Stats Widget, & Extension Status (5/12 cols) */}
+        <div className="lg:col-span-5 space-y-6">
+          
+          {/* 1. SELECTED TASK DETAIL INSPECTOR */}
+          <section className="glass-panel p-6 rounded-2xl space-y-5 border-cyan-500/20">
+            <div className="border-b border-gray-700/30 pb-3 flex items-center justify-between">
+              <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-cyan-400">
+                <FileText className="w-4 h-4" />
+                Task Details Inspector
+              </h3>
+              {selectedTask && (
+                <span className="text-[10px] font-mono opacity-50">ID: #{selectedTask.id?.substring(0, 6)}</span>
+              )}
             </div>
-          ) : (
-            tasks.map((task) => (
-              <div
-                key={task.id}
-                className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
-                  task.is_completed
-                    ? 'bg-emerald-500/10 border-emerald-500/30 opacity-70'
-                    : 'glass-panel border-gray-700/30'
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  {/* Friction 1 Checkbox */}
-                  <button
-                    type="button"
-                    onClick={() => handleToggleTaskComplete(task.id!, task.is_completed)}
-                    className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer ${
-                      task.is_completed
-                        ? 'bg-emerald-500 border-emerald-500 text-black shadow-md shadow-emerald-500/20'
-                        : 'border-cyan-500 hover:bg-cyan-500/20'
-                    }`}
-                    title="Click to toggle status"
-                  >
-                    {task.is_completed && <Check className="w-5 h-5 stroke-[3]" />}
-                  </button>
+
+            {selectedTask ? (
+              <div className="space-y-4">
+                {/* Title */}
+                <div>
+                  <label className="block text-[11px] font-semibold opacity-60 uppercase mb-1">Task Title</label>
+                  <input
+                    type="text"
+                    value={selectedTask.title}
+                    onChange={(e) => handleUpdateTaskDetail({ title: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-sm font-bold focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-[11px] font-semibold opacity-60 uppercase mb-1">Description & Notes</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Add description or notes..."
+                    value={selectedTask.description || ''}
+                    onChange={(e) => handleUpdateTaskDetail({ description: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-xs focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                {/* Category & Deadline Type */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold opacity-60 uppercase mb-1 flex items-center gap-1">
+                      <TagIcon className="w-3 h-3" /> Category
+                    </label>
+                    <select
+                      value={selectedTask.category || 'Work'}
+                      onChange={(e) => handleUpdateTaskDetail({ category: e.target.value })}
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-semibold focus:outline-none focus:border-cyan-500"
+                    >
+                      <option value="Work">Work</option>
+                      <option value="Personal">Personal</option>
+                      <option value="Study">Study</option>
+                      <option value="Project">Project</option>
+                    </select>
+                  </div>
 
                   <div>
-                    <p className={`text-sm font-semibold ${task.is_completed ? 'line-through opacity-60' : ''}`}>
-                      {task.title}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[11px] font-mono text-cyan-500 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20 flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> Start: {task.start_time}
-                      </span>
-                      {task.is_completed && (
-                        <span className="text-[10px] text-emerald-500 font-medium flex items-center gap-1">
-                          <Check className="w-3 h-3" /> Completed
-                        </span>
-                      )}
-                    </div>
+                    <label className="block text-[11px] font-semibold opacity-60 uppercase mb-1 flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> Deadline Type
+                    </label>
+                    <select
+                      value={selectedTask.deadline_type || 'daily'}
+                      onChange={(e: any) => handleUpdateTaskDetail({ deadline_type: e.target.value })}
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-semibold focus:outline-none focus:border-cyan-500"
+                    >
+                      <option value="daily">Daily Schedule</option>
+                      <option value="project">Major Project Date</option>
+                    </select>
                   </div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
 
-      {/* The Waiting Room Section (Emergency Protocol) */}
-      <section className="glass-panel-danger p-6 sm:p-8 rounded-2xl border border-red-500/30">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 text-red-400 text-xs font-bold uppercase tracking-wider mb-1">
-              <AlertTriangle className="w-4 h-4" />
-              Emergency Protocol
-              <span title="Emergency surrender option: Requires 120s continuous focus without leaving tab" className="cursor-help text-red-400/80 hover:text-red-300">
-                <Info className="w-3.5 h-3.5" />
+                {/* Deadline Date if Project */}
+                {selectedTask.deadline_type === 'project' && (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-1">
+                    <label className="block text-[11px] font-semibold text-amber-400 uppercase">Target Completion Date</label>
+                    <input
+                      type="date"
+                      value={selectedTask.deadline_date || todayStr}
+                      onChange={(e) => handleUpdateTaskDetail({ deadline_date: e.target.value })}
+                      className="w-full px-3 py-1.5 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-mono focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                )}
+
+                {/* Subtasks Checklist Section */}
+                <div className="space-y-2 pt-2 border-t border-gray-700/30">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                      <ListTodo className="w-3.5 h-3.5 text-cyan-400" />
+                      Subtasks Checklist
+                    </label>
+                    <span className="text-[11px] font-mono opacity-60">
+                      {selectedTask.subtasks?.filter(s => s.is_completed).length || 0} / {selectedTask.subtasks?.length || 0}
+                    </span>
+                  </div>
+
+                  {/* Add Subtask Form */}
+                  <form onSubmit={handleAddSubtask} className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add subtask step..."
+                      value={newSubtaskTitle}
+                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-xs focus:outline-none focus:border-cyan-500"
+                    />
+                    <button
+                      type="submit"
+                      className="px-3 py-1.5 rounded-lg bg-cyan-500 text-black font-bold text-xs flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </form>
+
+                  {/* Subtask Items */}
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                    {selectedTask.subtasks?.map((st) => (
+                      <div key={st.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-900/30 border border-gray-800">
+                        <label className="flex items-center gap-2 text-xs cursor-pointer flex-1">
+                          <input
+                            type="checkbox"
+                            checked={st.is_completed}
+                            onChange={() => handleToggleSubtask(st.id)}
+                            className="rounded border-gray-700 text-cyan-500 focus:ring-cyan-500"
+                          />
+                          <span className={st.is_completed ? 'line-through opacity-50' : ''}>{st.title}</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSubtask(st.id)}
+                          className="text-gray-500 hover:text-red-400 p-1 cursor-pointer"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            ) : (
+              <div className="text-center py-8 opacity-50 text-xs">
+                Select a task from the list to inspect details & subtasks.
+              </div>
+            )}
+          </section>
+
+          {/* 2. MINI PROGRESS & FOCUS STATS WIDGET ⭐ */}
+          <section className="glass-panel p-6 rounded-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-700/30 pb-3">
+              <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-cyan-400">
+                <Sparkles className="w-4 h-4" />
+                Focus Stats & Progress
+              </h3>
+              <span className="text-xs font-bold font-mono text-cyan-400">{progressPercent}%</span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="space-y-1.5">
+              <div className="w-full h-2.5 rounded-full bg-gray-800 overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500 rounded-full"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[11px] opacity-60 font-mono">
+                <span>{completedTasksCount} Completed</span>
+                <span>{totalTasksCount - completedTasksCount} Remaining</span>
+              </div>
+            </div>
+
+            {/* Streak & Time Summary Grid */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-center">
+                <Flame className="w-5 h-5 text-amber-400 mx-auto mb-1" />
+                <p className="text-lg font-black text-white font-mono">5 Days</p>
+                <p className="text-[10px] opacity-60 uppercase font-semibold">Focus Streak</p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-center">
+                <Timer className="w-5 h-5 text-cyan-400 mx-auto mb-1" />
+                <p className="text-lg font-black text-white font-mono">{toleranceMinutes}m</p>
+                <p className="text-[10px] opacity-60 uppercase font-semibold">Daily Limit</p>
+              </div>
+            </div>
+          </section>
+
+          {/* 3. CHROME EXTENSION LIVE STATUS CARD 🛡️ */}
+          <section className="glass-panel p-6 rounded-2xl space-y-3 border-emerald-500/20">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <Shield className="w-4 h-4 text-emerald-400" />
+                Extension Status
+              </h3>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                ACTIVE
               </span>
             </div>
-            <h3 className="text-xl font-bold">The Waiting Room</h3>
-          </div>
 
-          <button
-            onClick={() => {
-              setShowWaitingRoom(true);
-              setWaitingRoomTimer(120);
-              setFocusResetCount(0);
-              setWaitingRoomStatusText('Focus on this window for 120 continuous seconds.');
-            }}
-            disabled={isSurrendered}
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-red-600/30 transition-all shrink-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            <Flame className="w-4 h-4" />
-            <span>{isSurrendered ? 'Already Surrendered' : 'Saya Menyerah Hari Ini'}</span>
-          </button>
+            <p className="text-xs opacity-70 leading-relaxed">
+              Firestore real-time sync connected. Currently monitoring <strong className="text-cyan-400">{blockedUrls.length} blocked domains</strong> for distraction enforcement.
+            </p>
+
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {blockedUrls.map((url) => (
+                <span key={url} className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-800 border border-gray-700 text-gray-300">
+                  {url}
+                </span>
+              ))}
+            </div>
+          </section>
+
         </div>
-      </section>
+
+      </div>
 
       {/* Waiting Room Fullscreen Overlay Modal */}
       {showWaitingRoom && (
@@ -379,7 +748,6 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            {/* Countdown Display */}
             <div className="py-4 bg-black/60 rounded-2xl border border-red-500/30">
               <div className="text-6xl font-mono font-black text-red-500 tracking-tight">
                 {waitingRoomTimer}s
@@ -387,7 +755,6 @@ export default function DashboardPage() {
               <p className="text-xs text-gray-400 mt-2 font-medium">Continuous Unbroken Focus</p>
             </div>
 
-            {/* Warning Message & Reset Counter */}
             <div className="space-y-2 text-xs">
               <p className="text-amber-300 font-semibold bg-amber-500/10 py-2 px-3 rounded-lg border border-amber-500/20 flex items-center justify-center gap-1.5">
                 <AlertTriangle className="w-4 h-4 shrink-0" />

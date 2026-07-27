@@ -26,11 +26,11 @@ import {
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDemoKeyDoKeeFirebase2026",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "dokee-app.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "dokee-app",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "dokee-app.appspot.com",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "123456789012",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:123456789012:web:abcdef1234567890"
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "dokee-d7356.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "dokee-d7356",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "dokee-d7356.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "113028816861",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:113028816861:web:abcdef1234567890"
 };
 
 // Initialize Firebase App singleton
@@ -80,12 +80,24 @@ export interface UserSettings {
   updated_at?: Timestamp | null;
 }
 
+export interface SubTask {
+  id: string;
+  title: string;
+  is_completed: boolean;
+}
+
 export interface DailyTask {
   id?: string;
   user_id: string;
   title: string;
+  description?: string;
+  category?: 'Personal' | 'Work' | 'Study' | 'Project' | string;
   start_time: string; // "HH:mm"
   target_date: string; // "YYYY-MM-DD"
+  deadline_type?: 'daily' | 'project';
+  deadline_date?: string; // "YYYY-MM-DD"
+  deadline_time?: string; // "HH:mm"
+  subtasks?: SubTask[];
   is_completed: boolean;
   completed_at?: Timestamp | null;
   created_at?: Timestamp | null;
