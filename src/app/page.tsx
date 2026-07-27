@@ -42,7 +42,6 @@ import {
   UserSettings
 } from '@/lib/firebase';
 
-// Category color mappings
 const CATEGORY_OPTIONS = [
   { value: 'Work', label: 'Work', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' },
   { value: 'Personal', label: 'Personal', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' },
@@ -349,7 +348,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 space-y-6">
       
       {/* Status Alert Banner */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl glass-panel border-cyan-500/30">
@@ -372,11 +371,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Main Grid: Left/Center Tasks (7/12) + Right Utility Panel (5/12) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* 1 : 2 : 1.2 Grid Proportions Layout Container */}
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1.2fr] gap-6 items-start">
         
-        {/* LEFT/CENTER: Tasks List & Waiting Room (7/12 cols) */}
-        <div className="lg:col-span-7 space-y-8">
+        {/* CENTER COLUMN: Tasks List & Waiting Room (2 Parts) */}
+        <div className="space-y-6">
           
           {/* Daily Task List Section */}
           <section className="glass-panel p-6 rounded-2xl space-y-6">
@@ -392,7 +391,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Add Task Form with Glass Dropdown */}
+            {/* Add Task Form with Custom Glassmorphic Category Dropdown */}
             <form onSubmit={handleAddTask} className="flex flex-col sm:flex-row gap-3 p-3 rounded-xl border border-gray-700/30 bg-gray-900/10">
               <div className="flex-1">
                 <input
@@ -405,7 +404,7 @@ export default function DashboardPage() {
                 />
               </div>
 
-              {/* Custom Category Dropdown with glass-dropdown blur */}
+              {/* Custom Category Dropdown */}
               <div className="relative w-32" ref={addCategoryRef}>
                 <button
                   type="button"
@@ -460,7 +459,7 @@ export default function DashboardPage() {
             </form>
 
             {/* Tasks List */}
-            <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
               {tasks.length === 0 ? (
                 <div className="text-center py-12 border border-dashed border-gray-700/40 rounded-xl">
                   <p className="text-xs opacity-60">No daily tasks scheduled yet.</p>
@@ -570,8 +569,8 @@ export default function DashboardPage() {
 
         </div>
 
-        {/* RIGHT UTILITY PANEL */}
-        <div className="lg:col-span-5 space-y-6">
+        {/* RIGHT UTILITY PANEL (1.2 Parts) */}
+        <div className="space-y-6">
           
           {/* 1. SELECTED TASK DETAIL INSPECTOR */}
           <section className="glass-panel p-6 rounded-2xl space-y-5 border-cyan-500/20">
