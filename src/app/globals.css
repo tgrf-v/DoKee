@@ -1,12 +1,41 @@
 @import "tailwindcss";
 
+/* Default Dark Theme Variables */
 :root {
   --background: #0b0f19;
   --foreground: #f3f4f6;
   --card-bg: rgba(17, 24, 39, 0.75);
   --card-border: rgba(255, 255, 255, 0.08);
+  --card-shadow: rgba(0, 0, 0, 0.37);
+  --input-bg: rgba(15, 23, 42, 0.8);
+  --input-border: rgba(55, 65, 81, 0.8);
+  --input-text: #ffffff;
+  --input-placeholder: #6b7280;
+  --subtext: #9ca3af;
+  --nav-bg: rgba(3, 7, 18, 0.7);
   --accent-cyan: #06b6d4;
   --accent-purple: #8b5cf6;
+  --ambient-grad: 
+    radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.15) 0px, transparent 50%);
+}
+
+/* Light Theme Overrides */
+html.light {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-border: rgba(0, 0, 0, 0.08);
+  --card-shadow: rgba(148, 163, 184, 0.25);
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --input-text: #0f172a;
+  --input-placeholder: #94a3b8;
+  --subtext: #475569;
+  --nav-bg: rgba(255, 255, 255, 0.8);
+  --ambient-grad: 
+    radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
 }
 
 body {
@@ -14,10 +43,9 @@ body {
   background-color: var(--background);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   min-height: 100vh;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.15) 0px, transparent 50%);
+  background-image: var(--ambient-grad);
   background-attachment: fixed;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Glassmorphism custom helpers */
@@ -26,7 +54,8 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--card-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: 0 8px 32px 0 var(--card-shadow);
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .glass-panel-danger {
@@ -41,12 +70,12 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.2);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(148, 163, 184, 0.4);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(148, 163, 184, 0.6);
 }

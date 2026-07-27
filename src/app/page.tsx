@@ -27,6 +27,9 @@ export default function DashboardPage() {
   const { user, loading: authLoading, logOut } = useAuth();
   const router = useRouter();
 
+  // Theme State
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
   // Panel 1 States (Settings & Logs)
   const [blockedUrls, setBlockedUrls] = useState<string[]>(['youtube.com', 'westmanga.co']);
   const [newUrlInput, setNewUrlInput] = useState('');
@@ -45,9 +48,31 @@ export default function DashboardPage() {
   const [showWaitingRoom, setShowWaitingRoom] = useState(false);
   const [waitingRoomTimer, setWaitingRoomTimer] = useState(120);
   const [focusResetCount, setFocusResetCount] = useState(0);
-  const [waitingRoomStatusText, setWaitingRoomStatusText] = useState('Focus on this tab to complete surrender protocol.');
+  const [waitingRoomStatusText, setWaitingRoomStatusText] = useState('Focus on this window to complete surrender protocol.');
 
   const todayStr = getTodayDateString();
+
+  // Initialize & Persistence for Theme
+  useEffect(() => {
+    const savedTheme = (localStorage.getItem('dokee_theme') as 'dark' | 'light') || 'dark';
+    setTheme(savedTheme);
+    if (savedTheme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    localStorage.setItem('dokee_theme', nextTheme);
+    if (nextTheme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+  };
 
   // Auth Protection
   useEffect(() => {
@@ -68,7 +93,6 @@ export default function DashboardPage() {
         setBlockedUrls(data.blocked_urls || []);
         setToleranceMinutes(data.tolerance_minutes ?? 30);
       } else {
-        // Initialize default settings doc
         const defaultSettings: UserSettings = {
           blocked_urls: ['youtube.com', 'westmanga.co'],
           tolerance_minutes: 30,
@@ -89,7 +113,6 @@ export default function DashboardPage() {
         setRemainingSeconds(data.remaining_seconds);
         setIsSurrendered(!!data.is_surrendered);
       } else {
-        // Initialize today's log doc with tolerance_minutes * 60
         const initialLog: DailyLog = {
           user_id: user.uid,
           log_date: todayStr,
@@ -106,7 +129,7 @@ export default function DashboardPage() {
     };
   }, [user, todayStr, toleranceMinutes]);
 
-  // Firestore Real-time Sync: Daily Tasks (user_id == uid AND target_date == todayStr)
+  // Firestore Real-time Sync: Daily Tasks
   useEffect(() => {
     if (!user) return;
 
@@ -128,7 +151,7 @@ export default function DashboardPage() {
     return () => unsubTasks();
   }, [user, todayStr]);
 
-  // Waiting Room Focus Reset Logic (SYARAT MUTLAK: Reset to 120s on blur / tab switch)
+  // Waiting Room Focus Reset Protocol (Strict Reset Lock)
   useEffect(() => {
     if (!showWaitingRoom) return;
 
@@ -178,7 +201,6 @@ export default function DashboardPage() {
         updated_at: serverTimestamp()
       }, { merge: true });
 
-      // Update remaining seconds in today's log if not surrendered and new initial tolerance is adjusted
       const logDocId = getDailyLogId(user.uid, todayStr);
       const logRef = doc(db, 'daily_logs', logDocId);
       const logSnap = await getDoc(logRef);
@@ -265,7 +287,7 @@ export default function DashboardPage() {
     }
   };
 
-  // Time formatter: seconds to MM:SS
+  // Formatter MM:SS
   const formatMMSS = (totalSecs: number) => {
     const safeSecs = Math.max(0, totalSecs);
     const m = Math.floor(safeSecs / 60);
@@ -278,7 +300,7 @@ export default function DashboardPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-400 text-sm font-medium">Loading Dashboard...</p>
+          <p className="text-sm font-medium opacity-70">Loading Dashboard...</p>
         </div>
       </div>
     );
@@ -287,29 +309,38 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen pb-16">
       {/* Top Navigation Bar */}
-      <header className="border-b border-gray-800 bg-gray-950/70 backdrop-blur-md sticky top-0 z-30">
+      <header className="border-b border-gray-700/30 bg-[var(--nav-bg)] backdrop-blur-md sticky top-0 z-30 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-black font-extrabold text-lg shadow-md shadow-cyan-500/20">
               D
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                DoKee <span className="text-xs font-normal text-cyan-400 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20">Firebase Edition</span>
+              <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+                Do<span className="text-cyan-500">Kee</span> <span className="text-xs font-normal text-cyan-500 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20">Firebase Edition</span>
               </h1>
-              <p className="text-xs text-gray-400 hidden sm:block">Real-time Anti-Distraction Enforcement</p>
+              <p className="text-xs opacity-60 hidden sm:block">Real-time Anti-Distraction Enforcement</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="px-3 py-1.5 rounded-lg border border-gray-700/40 bg-gray-900/10 hover:bg-gray-800/20 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all"
+              title="Toggle Light/Dark Theme"
+            >
+              {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+            </button>
+
             <div className="text-right hidden sm:block">
-              <p className="text-xs text-gray-400">Logged in as</p>
-              <p className="text-xs font-semibold text-white">{user.email}</p>
+              <p className="text-[11px] opacity-60">Logged in as</p>
+              <p className="text-xs font-semibold">{user.email}</p>
             </div>
 
             <button
               onClick={() => logOut()}
-              className="px-3.5 py-1.5 rounded-lg border border-gray-700 bg-gray-900/60 hover:bg-gray-800 text-gray-300 text-xs font-semibold transition-all cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg border border-gray-700/40 bg-gray-900/10 hover:bg-gray-800/20 text-xs font-semibold transition-all cursor-pointer"
             >
               Sign Out
             </button>
@@ -321,22 +352,22 @@ export default function DashboardPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 space-y-8">
         
         {/* Status Alert Banner */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-gray-900/90 to-gray-900/40 border border-cyan-500/30">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl glass-panel border-cyan-500/30">
           <div className="flex items-center gap-3">
             <div className={`w-3 h-3 rounded-full ${isSurrendered ? 'bg-amber-400 animate-ping' : remainingSeconds > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`}></div>
             <div>
-              <p className="text-sm font-semibold text-white">
+              <p className="text-sm font-semibold">
                 Today&apos;s Status ({todayStr}): {isSurrendered ? 'Surrendered Mode Activated' : remainingSeconds > 0 ? 'Tolerance Active' : 'Tolerance Depleted - Blocking Enforced'}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs opacity-60">
                 Extension snapshot updates real-time with Firestore.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-gray-950 px-4 py-2 rounded-xl border border-gray-800">
-            <span className="text-xs uppercase text-gray-400 font-semibold tracking-wider">Remaining:</span>
-            <span className={`text-xl font-mono font-bold ${remainingSeconds <= 300 ? 'text-red-400 animate-pulse' : 'text-cyan-400'}`}>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-700/30 bg-gray-900/20">
+            <span className="text-xs uppercase opacity-60 font-semibold tracking-wider">Remaining:</span>
+            <span className={`text-xl font-mono font-bold ${remainingSeconds <= 300 ? 'text-red-500 animate-pulse' : 'text-cyan-500'}`}>
               {formatMMSS(remainingSeconds)}
             </span>
           </div>
@@ -346,21 +377,21 @@ export default function DashboardPage() {
           
           {/* PANEL 1: Global Settings */}
           <section className="glass-panel p-6 rounded-2xl space-y-6">
-            <div className="border-b border-gray-800 pb-4">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="border-b border-gray-700/30 pb-4">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 Panel 1: Global Settings
               </h2>
-              <p className="text-xs text-gray-400 mt-1">Configure distraction sites & daily tolerance allowance</p>
+              <p className="text-xs opacity-60 mt-1">Configure distraction sites & daily tolerance allowance</p>
             </div>
 
             <form onSubmit={handleSaveSettings} className="space-y-5">
               {/* Tolerance Minutes Input */}
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider opacity-80">
                   Daily Tolerance Minutes
                 </label>
                 <div className="flex items-center gap-3">
@@ -370,18 +401,18 @@ export default function DashboardPage() {
                     max="180"
                     value={toleranceMinutes}
                     onChange={(e) => setToleranceMinutes(Number(e.target.value))}
-                    className="w-full px-4 py-2 rounded-xl bg-gray-900/90 border border-gray-700 text-white font-mono text-sm focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-2 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] font-mono text-sm focus:outline-none focus:border-cyan-500"
                   />
-                  <span className="text-xs text-gray-400 shrink-0 font-medium">Minutes</span>
+                  <span className="text-xs opacity-60 shrink-0 font-medium">Minutes</span>
                 </div>
-                <p className="text-[11px] text-gray-500 mt-1">
+                <p className="text-[11px] opacity-50 mt-1">
                   Default: 30 mins. Controls total allowed time on blocked sites.
                 </p>
               </div>
 
               {/* Blocked URLs List */}
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider opacity-80">
                   Blocked URLs ({blockedUrls.length})
                 </label>
                 
@@ -392,7 +423,7 @@ export default function DashboardPage() {
                     value={newUrlInput}
                     onChange={(e) => setNewUrlInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addBlockedUrl(); } }}
-                    className="flex-1 px-3.5 py-2 rounded-xl bg-gray-900/90 border border-gray-700 text-white text-xs placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+                    className="flex-1 px-3.5 py-2 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] text-xs placeholder-[var(--input-placeholder)] focus:outline-none focus:border-cyan-500"
                   />
                   <button
                     type="button"
@@ -407,13 +438,13 @@ export default function DashboardPage() {
                   {blockedUrls.map((url) => (
                     <span
                       key={url}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gray-900 border border-gray-700 text-gray-200 text-xs font-mono"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-500 text-xs font-mono"
                     >
                       {url}
                       <button
                         type="button"
                         onClick={() => removeBlockedUrl(url)}
-                        className="text-gray-500 hover:text-red-400 font-bold ml-1 cursor-pointer"
+                        className="text-gray-400 hover:text-red-500 font-bold ml-1 cursor-pointer"
                       >
                         ×
                       </button>
@@ -434,24 +465,24 @@ export default function DashboardPage() {
 
           {/* PANEL 2: Task Manager */}
           <section className="glass-panel p-6 rounded-2xl space-y-6 lg:col-span-2">
-            <div className="border-b border-gray-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="border-b border-gray-700/30 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
                   Panel 2: Daily Task Manager
                 </h2>
-                <p className="text-xs text-gray-400 mt-1">Tasks scheduled for today ({todayStr}). Uncheck to lock distractors.</p>
+                <p className="text-xs opacity-60 mt-1">Tasks scheduled for today ({todayStr}). Uncheck to lock distractors.</p>
               </div>
 
-              <div className="text-xs text-cyan-400 bg-cyan-500/10 px-3 py-1.5 rounded-lg border border-cyan-500/20 self-start sm:self-auto font-mono">
+              <div className="text-xs text-cyan-500 bg-cyan-500/10 px-3 py-1.5 rounded-lg border border-cyan-500/20 self-start sm:self-auto font-mono">
                 {tasks.filter((t) => t.is_completed).length} / {tasks.length} Completed
               </div>
             </div>
 
             {/* Add Task Form */}
-            <form onSubmit={handleAddTask} className="flex flex-col sm:flex-row gap-3 bg-gray-950/60 p-3 rounded-xl border border-gray-800">
+            <form onSubmit={handleAddTask} className="flex flex-col sm:flex-row gap-3 p-3 rounded-xl border border-gray-700/30 bg-gray-900/10">
               <div className="flex-1">
                 <input
                   type="text"
@@ -459,7 +490,7 @@ export default function DashboardPage() {
                   placeholder="Task title (e.g. Upload Shorts)..."
                   value={taskTitle}
                   onChange={(e) => setTaskTitle(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white text-xs placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3.5 py-2 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] text-xs placeholder-[var(--input-placeholder)] focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -469,7 +500,7 @@ export default function DashboardPage() {
                   required
                   value={taskStartTime}
                   onChange={(e) => setTaskStartTime(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-white text-xs font-mono focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] text-xs font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -485,9 +516,9 @@ export default function DashboardPage() {
             {/* Tasks List */}
             <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
               {tasks.length === 0 ? (
-                <div className="text-center py-12 border border-dashed border-gray-800 rounded-xl">
-                  <p className="text-gray-500 text-xs">No daily tasks scheduled yet.</p>
-                  <p className="text-gray-600 text-[11px] mt-1">Add tasks above to set up your schedule.</p>
+                <div className="text-center py-12 border border-dashed border-gray-700/40 rounded-xl">
+                  <p className="text-xs opacity-60">No daily tasks scheduled yet.</p>
+                  <p className="text-[11px] opacity-40 mt-1">Add tasks above to set up your schedule.</p>
                 </div>
               ) : (
                 tasks.map((task) => (
@@ -495,8 +526,8 @@ export default function DashboardPage() {
                     key={task.id}
                     className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
                       task.is_completed
-                        ? 'bg-emerald-950/20 border-emerald-500/30 text-gray-400'
-                        : 'bg-gray-900/60 border-gray-800 text-white'
+                        ? 'bg-emerald-500/10 border-emerald-500/30 opacity-70'
+                        : 'glass-panel border-gray-700/30'
                     }`}
                   >
                     <div className="flex items-center gap-4">
@@ -507,7 +538,7 @@ export default function DashboardPage() {
                         className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer ${
                           task.is_completed
                             ? 'bg-emerald-500 border-emerald-500 text-black shadow-md shadow-emerald-500/20'
-                            : 'border-cyan-400 hover:bg-cyan-500/20'
+                            : 'border-cyan-500 hover:bg-cyan-500/20'
                         }`}
                         title="Click to toggle status"
                       >
@@ -519,15 +550,15 @@ export default function DashboardPage() {
                       </button>
 
                       <div>
-                        <p className={`text-sm font-semibold ${task.is_completed ? 'line-through text-gray-500' : 'text-white'}`}>
+                        <p className={`text-sm font-semibold ${task.is_completed ? 'line-through opacity-60' : ''}`}>
                           {task.title}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[11px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                          <span className="text-[11px] font-mono text-cyan-500 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
                             Start: {task.start_time}
                           </span>
                           {task.is_completed && (
-                            <span className="text-[10px] text-emerald-400 font-medium">✓ Completed</span>
+                            <span className="text-[10px] text-emerald-500 font-medium">✓ Completed</span>
                           )}
                         </div>
                       </div>
@@ -549,8 +580,8 @@ export default function DashboardPage() {
                 </svg>
                 Panel 3: The Waiting Room (Emergency Protocol)
               </div>
-              <h3 className="text-xl font-bold text-white">Need an Emergency Exception Today?</h3>
-              <p className="text-xs text-gray-400 mt-1 max-w-2xl">
+              <h3 className="text-xl font-bold">Need an Emergency Exception Today?</h3>
+              <p className="text-xs opacity-60 mt-1 max-w-2xl">
                 Friction 2 Protocol: Clicking &quot;Saya Menyerah Hari Ini&quot; starts a 120-second focus countdown. If you lose window focus or change tabs, the timer resets back to 120s!
               </p>
             </div>

@@ -14,6 +14,28 @@ export default function LoginPage() {
   const [confirmPass, setConfirmPass] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    const savedTheme = (localStorage.getItem('dokee_theme') as 'dark' | 'light') || 'dark';
+    setTheme(savedTheme);
+    if (savedTheme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    localStorage.setItem('dokee_theme', nextTheme);
+    if (nextTheme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -50,7 +72,6 @@ export default function LoginPage() {
       router.push('/');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
-      // Format friendly Firebase error messages
       if (errorMessage.includes('auth/invalid-credential') || errorMessage.includes('auth/wrong-password') || errorMessage.includes('auth/user-not-found')) {
         setError('Invalid email or password.');
       } else if (errorMessage.includes('auth/email-already-in-use')) {
@@ -77,7 +98,16 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
+    <main className="min-h-screen flex items-center justify-center p-4 relative">
+      {/* Theme Toggle Button */}
+      <button
+        onClick={toggleTheme}
+        className="absolute top-6 right-6 p-2.5 rounded-xl glass-panel text-sm font-semibold flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
+        title="Toggle Theme"
+      >
+        {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+      </button>
+
       <div className="w-full max-w-md">
         {/* Brand Header */}
         <div className="text-center mb-8">
@@ -85,10 +115,10 @@ export default function LoginPage() {
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
             DoKee v0.2 MVP (Firebase Edition)
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">
+          <h1 className="text-3xl font-extrabold tracking-tight">
             Do<span className="text-cyan-400">Kee</span>
           </h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-sm mt-1 opacity-70">
             Do + Keeper • Reclaim focus with anti-distraction enforcement
           </p>
         </div>
@@ -96,14 +126,14 @@ export default function LoginPage() {
         {/* Auth Card */}
         <div className="glass-panel p-6 sm:p-8 rounded-2xl">
           {/* Tab Switcher */}
-          <div className="flex rounded-xl bg-gray-900/60 p-1 mb-6 border border-gray-800">
+          <div className="flex rounded-xl bg-gray-900/40 p-1 mb-6 border border-gray-700/40">
             <button
               type="button"
               onClick={() => { setIsRegister(false); setError(''); }}
-              className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${
+              className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all cursor-pointer ${
                 !isRegister 
                   ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' 
-                  : 'text-gray-400 hover:text-white'
+                  : 'text-gray-400 hover:text-cyan-400'
               }`}
             >
               Sign In
@@ -111,10 +141,10 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => { setIsRegister(true); setError(''); }}
-              className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${
+              className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all cursor-pointer ${
                 isRegister 
                   ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20' 
-                  : 'text-gray-400 hover:text-white'
+                  : 'text-gray-400 hover:text-cyan-400'
               }`}
             >
               Register
@@ -132,7 +162,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider opacity-80">
                 Email Address
               </label>
               <input
@@ -141,12 +171,12 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="user@example.com"
-                className="w-full px-4 py-2.5 rounded-xl bg-gray-900/80 border border-gray-700/80 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] placeholder-[var(--input-placeholder)] focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider opacity-80">
                 Password
               </label>
               <input
@@ -155,13 +185,13 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-2.5 rounded-xl bg-gray-900/80 border border-gray-700/80 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm transition-all"
+                className="w-full px-4 py-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] placeholder-[var(--input-placeholder)] focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm transition-all"
               />
             </div>
 
             {isRegister && (
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider opacity-80">
                   Confirm Password
                 </label>
                 <input
@@ -170,7 +200,7 @@ export default function LoginPage() {
                   value={confirmPass}
                   onChange={(e) => setConfirmPass(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-4 py-2.5 rounded-xl bg-gray-900/80 border border-gray-700/80 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] placeholder-[var(--input-placeholder)] focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm transition-all"
                 />
               </div>
             )}
@@ -191,7 +221,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-gray-500 mt-6">
+        <p className="text-center text-xs opacity-60 mt-6">
           DoKee anti-distraction system • Connected to Firebase Auth & Firestore
         </p>
       </div>
