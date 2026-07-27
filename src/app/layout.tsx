@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import Sidebar from "@/components/Sidebar";
 
 export const metadata: Metadata = {
   title: "DoKee - Self-Productivity & Anti-Distraction System",
@@ -16,7 +17,12 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <AuthProvider>
-          {children}
+          <div className="flex flex-col md:flex-row min-h-screen">
+            <Sidebar />
+            <div className="flex-1 overflow-x-hidden">
+              {children}
+            </div>
+          </div>
         </AuthProvider>
       </body>
     </html>
