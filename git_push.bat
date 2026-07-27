@@ -1,6 +1,6 @@
 @echo off
-git add src/lib/firebase.ts src/app/page.tsx git_push.bat
-git commit -m "feat(ui): add right utility panel with task inspector, subtasks, deadline selector, stats & extension card"
+git add src/app/page.tsx src/components/Sidebar.tsx git_push.bat
+git commit -m "revert(ui): restore previous dark glassmorphic UI layout with right panel widgets"
 git remote add origin https://github.com/tgrf-v/DoKee.git 2>nul || git remote set-url origin https://github.com/tgrf-v/DoKee.git
 git branch -M main
 git push -u origin main
