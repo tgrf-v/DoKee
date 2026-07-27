@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { 
@@ -17,9 +17,9 @@ import {
   Tag as TagIcon,
   ListTodo,
   Shield,
-  Layers,
   Sparkles,
   ChevronRight,
+  ChevronDown,
   Trash2,
   FileText
 } from 'lucide-react';
@@ -42,6 +42,14 @@ import {
   UserSettings
 } from '@/lib/firebase';
 
+// Category color mappings
+const CATEGORY_OPTIONS = [
+  { value: 'Work', label: 'Work', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' },
+  { value: 'Personal', label: 'Personal', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' },
+  { value: 'Study', label: 'Study', color: 'bg-purple-500/10 text-purple-400 border-purple-500/30' },
+  { value: 'Project', label: 'Project', color: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
+];
+
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -60,6 +68,15 @@ export default function DashboardPage() {
   const [taskCategory, setTaskCategory] = useState<'Personal' | 'Work' | 'Study' | 'Project'>('Work');
   const [isAddingTask, setIsAddingTask] = useState(false);
 
+  // Custom Dropdown Open States
+  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+  const [isDetailCategoryOpen, setIsDetailCategoryOpen] = useState(false);
+  const [isDetailDeadlineTypeOpen, setIsDetailDeadlineTypeOpen] = useState(false);
+
+  const addCategoryRef = useRef<HTMLDivElement>(null);
+  const detailCategoryRef = useRef<HTMLDivElement>(null);
+  const detailDeadlineRef = useRef<HTMLDivElement>(null);
+
   // Detail Inspector Subtask State
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
@@ -70,6 +87,23 @@ export default function DashboardPage() {
   const [waitingRoomStatusText, setWaitingRoomStatusText] = useState('Focus on this window to complete surrender protocol.');
 
   const todayStr = getTodayDateString();
+
+  // Close Custom Dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (addCategoryRef.current && !addCategoryRef.current.contains(e.target as Node)) {
+        setIsAddCategoryOpen(false);
+      }
+      if (detailCategoryRef.current && !detailCategoryRef.current.contains(e.target as Node)) {
+        setIsDetailCategoryOpen(false);
+      }
+      if (detailDeadlineRef.current && !detailDeadlineRef.current.contains(e.target as Node)) {
+        setIsDetailDeadlineTypeOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Auth Protection
   useEffect(() => {
@@ -128,7 +162,6 @@ export default function DashboardPage() {
       });
       setTasks(fetchedTasks);
 
-      // Auto-select first task if none selected or selected task updated
       if (fetchedTasks.length > 0) {
         setSelectedTask((prev) => {
           if (!prev) return fetchedTasks[0];
@@ -339,7 +372,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Main Grid: Left/Center Tasks (6/10) + Right Utility Panel (4/10) */}
+      {/* Main Grid: Left/Center Tasks (7/12) + Right Utility Panel (5/12) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* LEFT/CENTER: Tasks List & Waiting Room (7/12 cols) */}
@@ -359,7 +392,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Add Task Form */}
+            {/* Add Task Form with Custom Glassmorphic Category Dropdown */}
             <form onSubmit={handleAddTask} className="flex flex-col sm:flex-row gap-3 p-3 rounded-xl border border-gray-700/30 bg-gray-900/10">
               <div className="flex-1">
                 <input
@@ -372,17 +405,37 @@ export default function DashboardPage() {
                 />
               </div>
 
-              <div className="w-28">
-                <select
-                  value={taskCategory}
-                  onChange={(e: any) => setTaskCategory(e.target.value)}
-                  className="w-full px-2 py-2 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] text-xs focus:outline-none focus:border-cyan-500 font-semibold"
+              {/* Custom Category Dropdown */}
+              <div className="relative w-32" ref={addCategoryRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddCategoryOpen(!isAddCategoryOpen)}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-[var(--input-text)] text-xs font-semibold flex items-center justify-between cursor-pointer transition-all"
                 >
-                  <option value="Work">Work</option>
-                  <option value="Personal">Personal</option>
-                  <option value="Study">Study</option>
-                  <option value="Project">Project</option>
-                </select>
+                  <span>{taskCategory}</span>
+                  <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                </button>
+
+                {isAddCategoryOpen && (
+                  <div className="absolute top-11 left-0 right-0 glass-panel rounded-xl p-1 shadow-2xl border border-gray-700/40 z-50 animate-fade-in">
+                    {CATEGORY_OPTIONS.map((cat) => (
+                      <button
+                        key={cat.value}
+                        type="button"
+                        onClick={() => {
+                          setTaskCategory(cat.value as any);
+                          setIsAddCategoryOpen(false);
+                        }}
+                        className={`w-full px-3 py-1.5 rounded-lg text-xs font-semibold text-left transition-all flex items-center gap-2 cursor-pointer ${
+                          taskCategory === cat.value ? 'bg-cyan-500/20 text-cyan-400' : 'hover:bg-gray-800/40 opacity-80'
+                        }`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${cat.value === 'Work' ? 'bg-cyan-400' : cat.value === 'Personal' ? 'bg-emerald-400' : cat.value === 'Study' ? 'bg-purple-400' : 'bg-amber-400'}`} />
+                        <span>{cat.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="w-28">
@@ -415,6 +468,8 @@ export default function DashboardPage() {
               ) : (
                 tasks.map((task) => {
                   const isSelected = selectedTask?.id === task.id;
+                  const categoryStyle = CATEGORY_OPTIONS.find(c => c.value === task.category)?.color || 'bg-gray-800 text-cyan-400';
+
                   return (
                     <div
                       key={task.id}
@@ -451,7 +506,7 @@ export default function DashboardPage() {
                               {task.title}
                             </p>
                             {task.category && (
-                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-gray-800/80 border border-gray-700/50 text-cyan-400">
+                              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${categoryStyle}`}>
                                 {task.category}
                               </span>
                             )}
@@ -555,36 +610,86 @@ export default function DashboardPage() {
                   />
                 </div>
 
-                {/* Category & Deadline Type */}
+                {/* Custom Category & Custom Deadline Type Selectors */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  {/* Custom Detail Category Selector */}
+                  <div className="relative" ref={detailCategoryRef}>
                     <label className="block text-[11px] font-semibold opacity-60 uppercase mb-1 flex items-center gap-1">
                       <TagIcon className="w-3 h-3" /> Category
                     </label>
-                    <select
-                      value={selectedTask.category || 'Work'}
-                      onChange={(e) => handleUpdateTaskDetail({ category: e.target.value })}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-semibold focus:outline-none focus:border-cyan-500"
+                    <button
+                      type="button"
+                      onClick={() => setIsDetailCategoryOpen(!isDetailCategoryOpen)}
+                      className="w-full px-3 py-1.5 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-semibold flex items-center justify-between cursor-pointer transition-all"
                     >
-                      <option value="Work">Work</option>
-                      <option value="Personal">Personal</option>
-                      <option value="Study">Study</option>
-                      <option value="Project">Project</option>
-                    </select>
+                      <span>{selectedTask.category || 'Work'}</span>
+                      <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                    </button>
+
+                    {isDetailCategoryOpen && (
+                      <div className="absolute top-14 left-0 right-0 glass-panel rounded-xl p-1 shadow-2xl border border-gray-700/40 z-50 animate-fade-in">
+                        {CATEGORY_OPTIONS.map((cat) => (
+                          <button
+                            key={cat.value}
+                            type="button"
+                            onClick={() => {
+                              handleUpdateTaskDetail({ category: cat.value });
+                              setIsDetailCategoryOpen(false);
+                            }}
+                            className={`w-full px-3 py-1.5 rounded-lg text-xs font-semibold text-left transition-all flex items-center gap-2 cursor-pointer ${
+                              selectedTask.category === cat.value ? 'bg-cyan-500/20 text-cyan-400' : 'hover:bg-gray-800/40 opacity-80'
+                            }`}
+                          >
+                            <span className={`w-2 h-2 rounded-full ${cat.value === 'Work' ? 'bg-cyan-400' : cat.value === 'Personal' ? 'bg-emerald-400' : cat.value === 'Study' ? 'bg-purple-400' : 'bg-amber-400'}`} />
+                            <span>{cat.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  <div>
+                  {/* Custom Detail Deadline Type Selector */}
+                  <div className="relative" ref={detailDeadlineRef}>
                     <label className="block text-[11px] font-semibold opacity-60 uppercase mb-1 flex items-center gap-1">
                       <Calendar className="w-3 h-3" /> Deadline Type
                     </label>
-                    <select
-                      value={selectedTask.deadline_type || 'daily'}
-                      onChange={(e: any) => handleUpdateTaskDetail({ deadline_type: e.target.value })}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-semibold focus:outline-none focus:border-cyan-500"
+                    <button
+                      type="button"
+                      onClick={() => setIsDetailDeadlineTypeOpen(!isDetailDeadlineTypeOpen)}
+                      className="w-full px-3 py-1.5 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-xs font-semibold flex items-center justify-between cursor-pointer transition-all"
                     >
-                      <option value="daily">Daily Schedule</option>
-                      <option value="project">Major Project Date</option>
-                    </select>
+                      <span>{selectedTask.deadline_type === 'project' ? 'Project Date' : 'Daily Schedule'}</span>
+                      <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                    </button>
+
+                    {isDetailDeadlineTypeOpen && (
+                      <div className="absolute top-14 left-0 right-0 glass-panel rounded-xl p-1 shadow-2xl border border-gray-700/40 z-50 animate-fade-in">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleUpdateTaskDetail({ deadline_type: 'daily' });
+                            setIsDetailDeadlineTypeOpen(false);
+                          }}
+                          className={`w-full px-3 py-1.5 rounded-lg text-xs font-semibold text-left transition-all cursor-pointer ${
+                            selectedTask.deadline_type !== 'project' ? 'bg-cyan-500/20 text-cyan-400' : 'hover:bg-gray-800/40 opacity-80'
+                          }`}
+                        >
+                          Daily Schedule
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleUpdateTaskDetail({ deadline_type: 'project' });
+                            setIsDetailDeadlineTypeOpen(false);
+                          }}
+                          className={`w-full px-3 py-1.5 rounded-lg text-xs font-semibold text-left transition-all cursor-pointer ${
+                            selectedTask.deadline_type === 'project' ? 'bg-cyan-500/20 text-cyan-400' : 'hover:bg-gray-800/40 opacity-80'
+                          }`}
+                        >
+                          Project Date
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
