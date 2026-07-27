@@ -15,9 +15,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased bg-[#f1f5f9] text-slate-900 min-h-screen">
+      <body className="antialiased bg-white text-slate-900 min-h-screen">
         <AuthProvider>
-          <div className="flex flex-col md:flex-row min-h-screen">
+          <div className="flex flex-col md:flex-row min-h-screen bg-white">
             <Sidebar />
             <div className="flex-1 overflow-x-hidden p-0 md:p-4">
               {children}

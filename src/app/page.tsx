@@ -350,26 +350,7 @@ export default function DashboardPage() {
   return (
     <main className="max-w-[1600px] mx-auto p-4 md:py-4 md:pr-4 space-y-6">
       
-      {/* Status Alert Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-3xl bg-white border border-slate-200/80 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${isSurrendered ? 'bg-amber-500 animate-ping' : remainingSeconds > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
-          <div>
-            <p className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-              <Activity className="w-4 h-4 text-cyan-600" />
-              Today&apos;s Status ({todayStr}): {isSurrendered ? 'Surrendered' : remainingSeconds > 0 ? 'Active Protection' : 'Tolerance Depleted - Blocked'}
-            </p>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-slate-200 bg-slate-50">
-          <Timer className="w-4 h-4 text-cyan-600" />
-          <span className="text-xs uppercase text-slate-500 font-bold tracking-wider">Remaining:</span>
-          <span className={`text-xl font-mono font-black ${remainingSeconds <= 300 ? 'text-red-600 animate-pulse' : 'text-cyan-600'}`}>
-            {formatMMSS(remainingSeconds)}
-          </span>
-        </div>
-      </div>
 
       {/* 2 : 1.2 Grid Proportions Layout Container */}
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1.2fr] gap-6 items-start">
