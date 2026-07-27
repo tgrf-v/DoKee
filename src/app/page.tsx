@@ -392,7 +392,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Add Task Form with Custom Glassmorphic Category Dropdown */}
+            {/* Add Task Form with Glass Dropdown */}
             <form onSubmit={handleAddTask} className="flex flex-col sm:flex-row gap-3 p-3 rounded-xl border border-gray-700/30 bg-gray-900/10">
               <div className="flex-1">
                 <input
@@ -405,7 +405,7 @@ export default function DashboardPage() {
                 />
               </div>
 
-              {/* Custom Category Dropdown */}
+              {/* Custom Category Dropdown with glass-dropdown blur */}
               <div className="relative w-32" ref={addCategoryRef}>
                 <button
                   type="button"
@@ -417,7 +417,7 @@ export default function DashboardPage() {
                 </button>
 
                 {isAddCategoryOpen && (
-                  <div className="absolute top-11 left-0 right-0 glass-panel rounded-xl p-1 shadow-2xl border border-gray-700/40 z-50 animate-fade-in">
+                  <div className="absolute top-11 left-0 right-0 glass-dropdown rounded-xl p-1.5 z-50 animate-fade-in">
                     {CATEGORY_OPTIONS.map((cat) => (
                       <button
                         key={cat.value}
@@ -426,8 +426,8 @@ export default function DashboardPage() {
                           setTaskCategory(cat.value as any);
                           setIsAddCategoryOpen(false);
                         }}
-                        className={`w-full px-3 py-1.5 rounded-lg text-xs font-semibold text-left transition-all flex items-center gap-2 cursor-pointer ${
-                          taskCategory === cat.value ? 'bg-cyan-500/20 text-cyan-400' : 'hover:bg-gray-800/40 opacity-80'
+                        className={`w-full px-3 py-2 rounded-lg text-xs font-semibold text-left transition-all flex items-center gap-2 cursor-pointer ${
+                          taskCategory === cat.value ? 'bg-cyan-500/25 text-cyan-300 font-bold' : 'hover:bg-gray-800/60 opacity-80'
                         }`}
                       >
                         <span className={`w-2 h-2 rounded-full ${cat.value === 'Work' ? 'bg-cyan-400' : cat.value === 'Personal' ? 'bg-emerald-400' : cat.value === 'Study' ? 'bg-purple-400' : 'bg-amber-400'}`} />
@@ -570,7 +570,7 @@ export default function DashboardPage() {
 
         </div>
 
-        {/* RIGHT UTILITY PANEL: Selected Task Details, Stats Widget, & Extension Status (5/12 cols) */}
+        {/* RIGHT UTILITY PANEL */}
         <div className="lg:col-span-5 space-y-6">
           
           {/* 1. SELECTED TASK DETAIL INSPECTOR */}
@@ -627,7 +627,7 @@ export default function DashboardPage() {
                     </button>
 
                     {isDetailCategoryOpen && (
-                      <div className="absolute top-14 left-0 right-0 glass-panel rounded-xl p-1 shadow-2xl border border-gray-700/40 z-50 animate-fade-in">
+                      <div className="absolute top-14 left-0 right-0 glass-dropdown rounded-xl p-1.5 z-50 animate-fade-in">
                         {CATEGORY_OPTIONS.map((cat) => (
                           <button
                             key={cat.value}
@@ -636,8 +636,8 @@ export default function DashboardPage() {
                               handleUpdateTaskDetail({ category: cat.value });
                               setIsDetailCategoryOpen(false);
                             }}
-                            className={`w-full px-3 py-1.5 rounded-lg text-xs font-semibold text-left transition-all flex items-center gap-2 cursor-pointer ${
-                              selectedTask.category === cat.value ? 'bg-cyan-500/20 text-cyan-400' : 'hover:bg-gray-800/40 opacity-80'
+                            className={`w-full px-3 py-2 rounded-lg text-xs font-semibold text-left transition-all flex items-center gap-2 cursor-pointer ${
+                              selectedTask.category === cat.value ? 'bg-cyan-500/25 text-cyan-300 font-bold' : 'hover:bg-gray-800/60 opacity-80'
                             }`}
                           >
                             <span className={`w-2 h-2 rounded-full ${cat.value === 'Work' ? 'bg-cyan-400' : cat.value === 'Personal' ? 'bg-emerald-400' : cat.value === 'Study' ? 'bg-purple-400' : 'bg-amber-400'}`} />
@@ -663,15 +663,15 @@ export default function DashboardPage() {
                     </button>
 
                     {isDetailDeadlineTypeOpen && (
-                      <div className="absolute top-14 left-0 right-0 glass-panel rounded-xl p-1 shadow-2xl border border-gray-700/40 z-50 animate-fade-in">
+                      <div className="absolute top-14 left-0 right-0 glass-dropdown rounded-xl p-1.5 z-50 animate-fade-in">
                         <button
                           type="button"
                           onClick={() => {
                             handleUpdateTaskDetail({ deadline_type: 'daily' });
                             setIsDetailDeadlineTypeOpen(false);
                           }}
-                          className={`w-full px-3 py-1.5 rounded-lg text-xs font-semibold text-left transition-all cursor-pointer ${
-                            selectedTask.deadline_type !== 'project' ? 'bg-cyan-500/20 text-cyan-400' : 'hover:bg-gray-800/40 opacity-80'
+                          className={`w-full px-3 py-2 rounded-lg text-xs font-semibold text-left transition-all cursor-pointer ${
+                            selectedTask.deadline_type !== 'project' ? 'bg-cyan-500/25 text-cyan-300 font-bold' : 'hover:bg-gray-800/60 opacity-80'
                           }`}
                         >
                           Daily Schedule
@@ -682,8 +682,8 @@ export default function DashboardPage() {
                             handleUpdateTaskDetail({ deadline_type: 'project' });
                             setIsDetailDeadlineTypeOpen(false);
                           }}
-                          className={`w-full px-3 py-1.5 rounded-lg text-xs font-semibold text-left transition-all cursor-pointer ${
-                            selectedTask.deadline_type === 'project' ? 'bg-cyan-500/20 text-cyan-400' : 'hover:bg-gray-800/40 opacity-80'
+                          className={`w-full px-3 py-2 rounded-lg text-xs font-semibold text-left transition-all cursor-pointer ${
+                            selectedTask.deadline_type === 'project' ? 'bg-cyan-500/25 text-cyan-300 font-bold' : 'hover:bg-gray-800/60 opacity-80'
                           }`}
                         >
                           Project Date
