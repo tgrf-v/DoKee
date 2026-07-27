@@ -348,7 +348,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="max-w-[1600px] mx-auto p-4 md:py-4 md:pr-4 space-y-6">
+    <main className="max-w-[1600px] mx-auto p-4 md:py-4 md:pr-4 md:pl-0 space-y-6">
       
 
 
@@ -356,7 +356,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1.2fr] gap-6 items-start">
         
         {/* CENTER COLUMN: Main Content (Pure White Card with Border) */}
-        <div className="space-y-6 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+        <div className="space-y-6 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] overflow-y-auto">
           
           {/* Daily Task List Section */}
           <section className="space-y-6">
@@ -551,7 +551,7 @@ export default function DashboardPage() {
         </div>
 
         {/* RIGHT UTILITY PANEL: Floating Grey Card (Grey Container) */}
-        <div className="space-y-6 bg-[#f4f5f7] p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+        <div className="space-y-6 bg-[#f4f5f7] p-6 rounded-3xl border border-slate-200/80 shadow-sm lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] overflow-y-auto">
           
           {/* 1. SELECTED TASK DETAIL INSPECTOR */}
           <section className="bg-white p-5 rounded-2xl border border-slate-200 space-y-4 shadow-sm">

@@ -19,7 +19,7 @@ export default function RootLayout({
         <AuthProvider>
           <div className="flex flex-col md:flex-row min-h-screen bg-white">
             <Sidebar />
-            <div className="flex-1 overflow-x-hidden p-0 md:p-4">
+            <div className="flex-1 overflow-x-hidden p-0">
               {children}
             </div>
           </div>

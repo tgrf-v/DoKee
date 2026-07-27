@@ -69,7 +69,7 @@ export default function Sidebar() {
 
       {/* Sidebar Container (Floating Grey Card on Desktop) */}
       <aside
-        className={`fixed md:sticky top-0 left-0 z-50 h-screen md:h-[calc(100vh-2rem)] md:my-4 md:ml-4 w-60 bg-[#f4f5f7] border border-slate-200/80 md:rounded-3xl flex flex-col justify-between p-5 transition-transform duration-300 shadow-sm ${
+        className={`fixed md:sticky top-0 md:top-4 left-0 z-50 h-screen md:h-[calc(100vh-2rem)] md:my-4 md:ml-4 w-60 bg-[#f4f5f7] border border-slate-200/80 md:rounded-3xl flex flex-col justify-between p-5 transition-transform duration-300 shadow-sm ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
