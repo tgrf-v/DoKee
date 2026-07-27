@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { Sun, Moon, Shield, Lock, Mail, KeyRound, AlertCircle, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const { user, signIn, signUp, loading: authLoading } = useAuth();
@@ -99,20 +100,30 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 relative">
-      {/* Theme Toggle Button */}
+      {/* Theme Toggle Button with Lucide Sun/Moon Icons */}
       <button
         onClick={toggleTheme}
-        className="absolute top-6 right-6 p-2.5 rounded-xl glass-panel text-sm font-semibold flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
+        className="absolute top-6 right-6 p-2.5 rounded-xl glass-panel text-xs font-semibold flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
         title="Toggle Theme"
       >
-        {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+        {theme === 'dark' ? (
+          <>
+            <Sun className="w-4 h-4 text-amber-400" />
+            <span>Light Mode</span>
+          </>
+        ) : (
+          <>
+            <Moon className="w-4 h-4 text-indigo-400" />
+            <span>Dark Mode</span>
+          </>
+        )}
       </button>
 
       <div className="w-full max-w-md">
         {/* Brand Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold mb-3">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            <Shield className="w-3.5 h-3.5" />
             DoKee v0.2 MVP (Firebase Edition)
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight">
@@ -153,16 +164,15 @@ export default function LoginPage() {
 
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2">
-              <svg className="w-4 h-4 shrink-0 fill-current" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
+              <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider opacity-80">
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider opacity-80 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-cyan-400" />
                 Email Address
               </label>
               <input
@@ -176,7 +186,8 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider opacity-80">
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider opacity-80 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-cyan-400" />
                 Password
               </label>
               <input
@@ -191,7 +202,8 @@ export default function LoginPage() {
 
             {isRegister && (
               <div>
-                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider opacity-80">
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider opacity-80 flex items-center gap-1.5">
+                  <KeyRound className="w-3.5 h-3.5 text-cyan-400" />
                   Confirm Password
                 </label>
                 <input
@@ -213,9 +225,15 @@ export default function LoginPage() {
               {isSubmitting ? (
                 <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
               ) : isRegister ? (
-                'Create Account'
+                <>
+                  <span>Create Account</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
               ) : (
-                'Sign In to Dashboard'
+                <>
+                  <span>Sign In to Dashboard</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
               )}
             </button>
           </form>
